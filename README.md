@@ -12,4 +12,4 @@ https://tetra.seventeencups.net/tutorial
 
 With Rust [installed and setup](https://www.rust-lang.org/learn/get-started), clone this repo and run:
 
- `cargo run`.
+ `cargo run`
