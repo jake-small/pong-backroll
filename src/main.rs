@@ -2,7 +2,11 @@ use tetra::graphics::{self, Color, Rectangle, Texture};
 use tetra::input::{self, Key};
 use tetra::math::Vec2;
 use tetra::window;
-use tetra::{Context, ContextBuilder, State};
+use tetra::{Context, ContextBuilder, State as Play};
+use backroll::{command::Command, Event, P2PSessionBuilder};
+use backroll_transport_udp::{UdpConnectionConfig, UdpManager};
+use bevy_tasks::TaskPool;
+use bytemuck::{Pod, Zeroable};
 
 const WINDOW_WIDTH: f32 = 640.0;
 const WINDOW_HEIGHT: f32 = 480.0;
@@ -12,10 +16,34 @@ const PADDLE_SPIN: f32 = 4.0;
 const BALL_ACC: f32 = 0.05;
 
 fn main() -> tetra::Result {
-    ContextBuilder::new("Pong", WINDOW_WIDTH as i32, WINDOW_HEIGHT as i32)
+    ContextBuilder::new("Pong Backroll", WINDOW_WIDTH as i32, WINDOW_HEIGHT as i32)
         .quit_on_escape(true)
         .build()?
         .run(GameState::new)
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Zeroable, Pod, PartialEq, Eq, Debug)]
+struct Input {
+    pub key: u8,
+}
+
+
+#[derive(Clone, Copy, Hash)]
+pub struct PlayerState {
+    pub y: u32,
+}
+
+#[derive(Clone, Hash)]
+struct State {
+    pub players: Vec<PlayerState>,
+    pub ball: Vec2<u32>,
+}
+
+struct Config {}
+impl backroll::Config for Config {
+    type Input = Input;
+    type State = State;
 }
 
 struct Entity {
@@ -98,7 +126,7 @@ impl GameState {
     }
 }
 
-impl State for GameState {
+impl Play for GameState {
     fn update(&mut self, ctx: &mut Context) -> tetra::Result {
         if input::is_key_down(ctx, Key::W) {
             self.player1.position.y -= PADDLE_SPEED;
